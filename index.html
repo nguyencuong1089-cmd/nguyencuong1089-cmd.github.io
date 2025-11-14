@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thẻ Tích Điểm Cá Nhân + Google Drive Sync</title>
+<title>Thẻ Tích Điểm + Google Drive</title>
 <style>
 body { font-family: sans-serif; padding: 20px; }
 input { padding: 8px; margin: 5px 0; width: 100%; }
-button { padding: 10px; margin-top: 10px; width: 100%; }
+button { padding: 10px; margin-top: 5px; width: 100%; }
 .item { border: 1px solid #ccc; padding: 10px; border-radius: 8px; margin-top: 10px; }
 .section { margin-top: 25px; padding-top: 10px; border-top: 2px solid #eee; }
 </style>
 </head>
 <body>
-<h2>Thẻ Tích Điểm Cá Nhân + Google Drive</h2>
+<h2>Thẻ Tích Điểm Cá Nhân</h2>
 
 <input id="searchPhone" placeholder="Tìm theo 4 số cuối số điện thoại">
 <button onclick="searchCustomer()">Tìm kiếm</button>
@@ -33,17 +33,18 @@ button { padding: 10px; margin-top: 10px; width: 100%; }
 </div>
 
 <div class="section">
-<h3>Tổng số lần tích điểm toàn bộ khách</h3>
+<h3>Tổng số điểm</h3>
 <div id="totalPoints"></div>
 </div>
 
 <script>
+// Dữ liệu lưu localStorage
 let data = JSON.parse(localStorage.getItem("customers") || "[]");
 
-// Tích hợp URL Web App Google Drive của bạn
+// **Thay URL Web App của bạn ở đây**
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFBbA6eVg165WWKQH0yKkTBn6h3joYXifetN22g1D2Dz6yP-bBObSLe7tUWvZJyuU3kQ/exec";
 
-// Đồng bộ dữ liệu lên Google Drive
+// Gửi dữ liệu lên Drive
 async function syncToDrive(c) {
     try {
         await fetch(GOOGLE_SCRIPT_URL, {
@@ -54,7 +55,7 @@ async function syncToDrive(c) {
     } catch(e){ console.error("Sync failed", e);}
 }
 
-// Load dữ liệu từ Google Drive
+// Lấy toàn bộ khách từ Drive
 async function loadFromDrive() {
     try {
         let res = await fetch(GOOGLE_SCRIPT_URL + "?action=getAllCustomers");
@@ -63,12 +64,14 @@ async function loadFromDrive() {
     } catch(e){ console.warn("Load failed", e);}
 }
 
+// Lưu local
 function save(){ localStorage.setItem("customers", JSON.stringify(data)); }
 function today(){ return new Date().toISOString().split("T")[0]; }
 function addDays(n){ let d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split("T")[0]; }
-function getFavoriteFood(arr){ if(!arr||arr.length===0)return null; let map={}; arr.forEach(x=>map[x]=(map[x]||0)+1); return Object.keys(map).sort((a,b)=>map[b]-map[a])[0];}
-function getFoodCounts(arr){ let map={}; arr.forEach(x=>map[x]=(map[x]||0)+1); return map;}
+function getFavoriteFood(arr){ if(!arr||arr.length===0)return null; let map={}; arr.forEach(x=>map[x]=(map[x]||0)+1); return Object.keys(map).sort((a,b)=>map[b]-map[a])[0]; }
+function getFoodCounts(arr){ let map={}; arr.forEach(x=>map[x]=(map[x]||0)+1); return map; }
 
+// Render danh sách khách
 function render() {
     let box = document.getElementById("list"); box.innerHTML="";
     let total=0;
@@ -97,6 +100,7 @@ function render() {
     document.getElementById("totalPoints").textContent=total+" điểm";
 }
 
+// Thêm điểm
 function addPoint() {
     let phone=document.getElementById("phone").value.trim();
     let name=document.getElementById("name").value.trim();
@@ -112,10 +116,12 @@ function addPoint() {
     save(); render(); syncToDrive(c);
 }
 
+// Trừ điểm
 function subPoint(phone){ let c=data.find(x=>x.phone===phone); if(!c)return; c.points=Math.max(0,c.points-1); save(); render(); syncToDrive(c);}
 function subPointByPhone(){ let phone=document.getElementById("phone").value.trim(); if(!phone) return alert("Nhập số điện thoại!"); subPoint(phone);}
 function del(phone){ if(!confirm("Xoá khách này?")) return; data=data.filter(x=>x.phone!==phone); save(); render(); syncToDrive({phone:phone,deleted:true}); }
 
+// Tìm kiếm 4 số cuối
 function searchCustomer(){
     let last4=document.getElementById("searchPhone").value.trim();
     if(!last4) return alert("Nhập 4 số cuối!");
